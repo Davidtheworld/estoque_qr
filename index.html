@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estoque Industrial</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 25px auto;
+      padding: 15px;
+      background: #f1f4f8;
+      color: #172033;
+    }
+
+    h1 { text-align: center; }
+
+    #reader {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    #status {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      padding: 12px;
+      margin: 5px 0;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: #1769aa;
+      color: white;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Estoque Industrial</h1>
+  <p>Posicione o QR Code dentro da área de leitura.</p>
+
+  <div id="reader"></div>
+  <div id="status">Aguardando leitura...</div>
+
+  <script>
+    // Substitua pelo endereço HTTPS da API
+    // que será configurada para o Node-RED.
+    const API_URL = "https://SEU-ENDERECO/api/scan";
+
+    const status = document.getElementById("status");
+    let ultimoCodigo = "";
+    let ultimoEnvio = 0;
+
+    async function enviarCodigo(codigo) {
+      const agora = Date.now();
+
+      // Evita enviar repetidamente o mesmo QR Code.
+      if (codigo === ultimoCodigo &&
+          agora - ultimoEnvio < 3000) {
+        return;
+      }
+
+      ultimoCodigo = codigo;
+      ultimoEnvio = agora;
+
+      status.textContent = "Enviando " + codigo + "...";
+
+      try {
+        const resposta = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            codigo: codigo
+          })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok || !dados.sucesso) {
+          throw new Error(
+            dados.mensagem || "Falha ao processar código."
+          );
+        }
+
+        status.textContent =
+          "Sucesso! Código recebido: " + dados.codigo;
+      } catch (erro) {
+        status.textContent =
+          "Erro no envio: " + erro.message;
+        ultimoCodigo = "";
+      }
+    }
+
+    const scanner = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(cameras => {
+      if (!cameras.length) {
+        throw new Error("Nenhuma câmera encontrada.");
+      }
+
+      const camera =
+        cameras.find(c => /back|traseira|environment/i.test(c.label))
+        || cameras[cameras.length - 1];
+
+      scanner.start(
+        camera.id,
+        { fps: 10, qrbox: { width: 230, height: 230 } },
+        codigo => enviarCodigo(codigo),
+        () => {}
+      );
+    }).catch(erro => {
+      status.textContent =
+        "Não foi possível abrir a câmera: " + erro;
+    });
+  </script>
+</body>
+</html>
