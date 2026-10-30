@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -45,9 +44,9 @@
   <div id="status">Preparando câmera...</div>
 
   <script>
-    // Vamos configurar o endereço da API depois.
-    const API_URL = "https://fuji-gardens-exports-medicaid.trycloudflare.com/api/scan";
-    
+    const API_URL =
+      "https://fuji-gardens-exports-medicaid.trycloudflare.com/api/scan";
+
     const status = document.getElementById("status");
 
     let ultimoCodigo = "";
@@ -64,34 +63,37 @@
       ultimoCodigo = codigo;
       ultimoEnvio = agora;
 
-      // Ainda não envia ao Node-RED.
-      // Primeiro vamos testar somente a câmera.
-     status.textContent = "Enviando " + codigo + "...";
+      status.textContent = "Enviando " + codigo + "...";
 
-try {
-    const resposta = await fetch(API_URL, {
-        method: "POST",
-        headers: {
+      try {
+        const resposta = await fetch(API_URL, {
+          method: "POST",
+          headers: {
             "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+          },
+          body: JSON.stringify({
             codigo: codigo
-        })
-    });
+          })
+        });
 
-    const dados = await resposta.json();
+        const dados = await resposta.json();
 
-    if (!resposta.ok || !dados.sucesso) {
-        throw new Error(dados.mensagem || "Falha no envio.");
+        if (!resposta.ok || !dados.sucesso) {
+          throw new Error(
+            dados.mensagem || "Falha no envio."
+          );
+        }
+
+        status.textContent =
+          "Sucesso! Código recebido: " + dados.codigo;
+
+      } catch (erro) {
+        status.textContent =
+          "Erro no envio: " + erro.message;
+
+        ultimoCodigo = "";
+      }
     }
-
-    status.textContent =
-        "Sucesso! Código recebido: " + dados.codigo;
-
-} catch (erro) {
-    status.textContent = "Erro no envio: " + erro.message;
-    ultimoCodigo = "";
-}
 
     async function iniciarScanner() {
       try {
@@ -99,13 +101,7 @@ try {
           throw new Error("Biblioteca QR Code não carregou.");
         }
 
-        if (!navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia) {
-          throw new Error("Câmera indisponível neste navegador.");
-        }
-
         const scanner = new Html5Qrcode("reader");
-
         const cameras = await Html5Qrcode.getCameras();
 
         if (!cameras || cameras.length === 0) {
@@ -117,8 +113,6 @@ try {
             /back|traseira|environment/i.test(c.label)
           ) || cameras[cameras.length - 1];
 
-        status.textContent = "Iniciando câmera...";
-
         await scanner.start(
           camera.id,
           {
@@ -129,7 +123,9 @@ try {
           () => {}
         );
 
-        status.textContent = "Câmera iniciada! Aguardando QR Code...";
+        status.textContent =
+          "Câmera iniciada! Aguardando QR Code...";
+
       } catch (erro) {
         status.textContent = "Erro: " + erro.message;
       }
