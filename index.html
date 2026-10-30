@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -33,17 +34,6 @@
       border-radius: 8px;
       overflow-wrap: anywhere;
     }
-
-    button {
-      padding: 12px;
-      margin: 5px 0;
-      width: 100%;
-      border: 0;
-      border-radius: 8px;
-      background: #1769aa;
-      color: white;
-      font-size: 16px;
-    }
   </style>
 </head>
 
@@ -52,21 +42,20 @@
   <p>Posicione o QR Code dentro da área de leitura.</p>
 
   <div id="reader"></div>
-  <div id="status">Aguardando leitura...</div>
+  <div id="status">Preparando câmera...</div>
 
   <script>
-    // Substitua pelo endereço HTTPS da API
-    // que será configurada para o Node-RED.
-    const API_URL = http://127.0.0.1:1880/;
+    // Vamos configurar o endereço da API depois.
+    const API_URL = "";
 
     const status = document.getElementById("status");
+
     let ultimoCodigo = "";
     let ultimoEnvio = 0;
 
     async function enviarCodigo(codigo) {
       const agora = Date.now();
 
-      // Evita enviar repetidamente o mesmo QR Code.
       if (codigo === ultimoCodigo &&
           agora - ultimoEnvio < 3000) {
         return;
@@ -75,57 +64,55 @@
       ultimoCodigo = codigo;
       ultimoEnvio = agora;
 
-      status.textContent = "Enviando " + codigo + "...";
+      // Ainda não envia ao Node-RED.
+      // Primeiro vamos testar somente a câmera.
+      status.textContent = "QR Code lido: " + codigo;
+    }
 
+    async function iniciarScanner() {
       try {
-        const resposta = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            codigo: codigo
-          })
-        });
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok || !dados.sucesso) {
-          throw new Error(
-            dados.mensagem || "Falha ao processar código."
-          );
+        if (typeof Html5Qrcode === "undefined") {
+          throw new Error("Biblioteca QR Code não carregou.");
         }
 
-        status.textContent =
-          "Sucesso! Código recebido: " + dados.codigo;
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Câmera indisponível neste navegador.");
+        }
+
+        const scanner = new Html5Qrcode("reader");
+
+        const cameras = await Html5Qrcode.getCameras();
+
+        if (!cameras || cameras.length === 0) {
+          throw new Error("Nenhuma câmera encontrada.");
+        }
+
+        const camera =
+          cameras.find(c =>
+            /back|traseira|environment/i.test(c.label)
+          ) || cameras[cameras.length - 1];
+
+        status.textContent = "Iniciando câmera...";
+
+        await scanner.start(
+          camera.id,
+          {
+            fps: 10,
+            qrbox: { width: 230, height: 230 }
+          },
+          codigo => enviarCodigo(codigo),
+          () => {}
+        );
+
+        status.textContent = "Câmera iniciada! Aguardando QR Code...";
       } catch (erro) {
-        status.textContent =
-          "Erro no envio: " + erro.message;
-        ultimoCodigo = "";
+        status.textContent = "Erro: " + erro.message;
       }
     }
 
-    const scanner = new Html5Qrcode("reader");
-
-    Html5Qrcode.getCameras().then(cameras => {
-      if (!cameras.length) {
-        throw new Error("Nenhuma câmera encontrada.");
-      }
-
-      const camera =
-        cameras.find(c => /back|traseira|environment/i.test(c.label))
-        || cameras[cameras.length - 1];
-
-      scanner.start(
-        camera.id,
-        { fps: 10, qrbox: { width: 230, height: 230 } },
-        codigo => enviarCodigo(codigo),
-        () => {}
-      );
-    }).catch(erro => {
-      status.textContent =
-        "Não foi possível abrir a câmera: " + erro;
-    });
+    iniciarScanner();
   </script>
 </body>
 </html>
+
