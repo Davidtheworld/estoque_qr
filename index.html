@@ -88,12 +88,14 @@
           "Sucesso! Código recebido: " + dados.codigo;
 
       } catch (erro) {
-        status.textContent =
-          "Erro no envio: " + erro.message;
+    status.textContent =
+      "Erro no envio: " +
+      (erro.message || String(erro));
 
-        ultimoCodigo = "";
-      }
-    }
+    console.error("Detalhes do erro:", erro);
+
+    ultimoCodigo = "";
+}
 
     async function iniciarScanner() {
       try {
