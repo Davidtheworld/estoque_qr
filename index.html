@@ -47,7 +47,6 @@
   <script>
     // Vamos configurar o endereço da API depois.
     const API_URL = "https://fuji-gardens-exports-medicaid.trycloudflare.com/api/scan";
-
     const status = document.getElementById("status");
 
     let ultimoCodigo = "";
@@ -66,8 +65,32 @@
 
       // Ainda não envia ao Node-RED.
       // Primeiro vamos testar somente a câmera.
-      status.textContent = "QR Code lido: " + codigo;
+     status.textContent = "Enviando " + codigo + "...";
+
+try {
+    const resposta = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            codigo: codigo
+        })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok || !dados.sucesso) {
+        throw new Error(dados.mensagem || "Falha no envio.");
     }
+
+    status.textContent =
+        "Sucesso! Código recebido: " + dados.codigo;
+
+} catch (erro) {
+    status.textContent = "Erro no envio: " + erro.message;
+    ultimoCodigo = "";
+}
 
     async function iniciarScanner() {
       try {
