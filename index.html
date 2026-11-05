@@ -65,12 +65,21 @@
 
       try {
         const resposta = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            codigo: codigo
+  method: "POST",
+  mode: "cors",
+  cache: "no-store",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    codigo: codigo
+  })
+});
+
+console.log("Status HTTP:", resposta.status);
+
+const dados = await resposta.json();
+console.log("Resposta da API:", dados);
           })
         });
 
