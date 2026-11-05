@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -18,7 +18,9 @@
       color: #172033;
     }
 
-    h1 { text-align: center; }
+    h1 {
+      text-align: center;
+    }
 
     #reader {
       background: white;
@@ -32,6 +34,8 @@
       background: white;
       border-radius: 8px;
       overflow-wrap: anywhere;
+      white-space: pre-line;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -61,7 +65,7 @@
       ultimoCodigo = codigo;
       ultimoEnvio = agora;
 
-      status.textContent = "Enviando " + codigo + "...";
+      status.textContent = "Consultando peça " + codigo + "...";
 
       try {
         const resposta = await fetch(API_URL, {
@@ -85,7 +89,12 @@
         }
 
         status.textContent =
-          "Sucesso! Código recebido: " + dados.codigo;
+          "PEÇA ENCONTRADA!\n\n" +
+          "Código: " + (dados.codigo || "Não informado") + "\n" +
+          "Nome: " + (dados.nome || "Não informado") + "\n" +
+          "Localização: " + (dados.localizacao || "Não informada") + "\n" +
+          "Quantidade: " + (dados.quantidade ?? "Não informada") + "\n" +
+          "Estoque mínimo: " + (dados.estoque_minimo ?? "Não informado");
 
       } catch (erro) {
         status.textContent =
@@ -138,6 +147,11 @@
       }
     }
 
+    iniciarScanner();
+  </script>
+</body>
+</html>
+```
     iniciarScanner();
   </script>
 </body>
